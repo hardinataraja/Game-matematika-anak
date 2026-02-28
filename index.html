@@ -5,9 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Matematika Anak Pintar</title>
     
-    <meta name="theme-color" content="#FF9AA2">
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk1hdGVtYXRpa2EgQW5hayBQaW50YXIiLAogICJzaG9ydF9uYW1lIjogIk1hdGUKUGludGFyIiwKICAic3RhcnRfdXJsIjogIi4iLAogICJkaXNwbGF5IjogInN0YW5kYWxvbmUiLAogICJiYWNrZ3JvdW5kX2NvbG9yIjogIiNGRkNGRDIiLAogICJpY29ucyI6IFt7CiAgICAic3JjIjogImh0dHBzOi8vY2RuLWljb25zLXBuZy5mbGl0aWNvbi5jb20vNTEyLzI4MTgvMjgxODIyNC5wbmciLAogICAgInNpemVzIjogIjUxMng1MTIiLAogICAgInR5cGUiOiAiaW1hZ2UvcG5nIgogIH1dfQ==">
+<meta name="theme-color" content="#FF9AA2">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="manifest" id="my-manifest">
 
+<script>
+    // Membuat Manifest secara dinamis agar ikon terbaca
+    const myDynamicManifest = {
+      "name": "Matematika Anak Pintar",
+      "short_name": "MathPintar",
+      "start_url": ".",
+      "display": "standalone",
+      "background_color": "#FFCFD2",
+      "theme_color": "#FF9AA2",
+      "icons": [
+        {
+          "src": "icon.png",
+          "sizes": "512x512",
+          "type": "image/png",
+          "purpose": "any maskable"
+        }
+      ]
+    };
+    const stringManifest = JSON.stringify(myDynamicManifest);
+    const blob = new Blob([stringManifest], {type: 'application/json'});
+    const manifestURL = URL.createObjectURL(blob);
+    document.querySelector('#my-manifest').setAttribute('href', manifestURL);
+</script>
+    
     <style>
         :root {
             --primary: #FF9AA2;
@@ -251,6 +276,16 @@
 
     generateQuestion();
 </script>
-
+<script>
+    // Mendaftarkan Service Worker sederhana agar bisa di-install
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('sw.js').catch(() => {
+                console.log("Service worker registration failed");
+            });
+        });
+    }
+</script>
+    
 </body>
 </html>
