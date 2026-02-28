@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Petualangan Angka Pintar</title>
+    
+    <meta name="theme-color" content="#FF9AA2">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlBldHVhbGFuZ2FuIEFuZ2thIFBpbnRhciIsCiAgInNob3J0X25hbWUiOiAiQW5na2FQaW50YXIiLAogICJzdGFydF91cmwiOiAiLiIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiI0ZGQ0ZEMiIsCiAgImljb25zIjogW3sKICAgICJzcmMiOiAiaHR0cHM6Ly9jZG4taWNvbnMtcG5nLmZsaXRpY29uLmNvbS81MTIvMjgxOC8yODE4MjI0LnBuZyIsCiAgICAic2l6ZXMiOiAiNTEyeDUxMiIsCiAgICAidHlwZSI6ICJpbWFnZS9wbmciCiAgfV1KfQ==">
+
+    <style>
+        :root {
+            --primary: #FF9AA2;
+            --secondary: #B5EAD7;
+            --accent: #FFDAC1;
+            --text: #5D5D5D;
+        }
+
+        body {
+            font-family: 'Comic Sans MS', cursive;
+            background-color: #E0F7FA;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #game-container {
+            background: white;
+            border-radius: 40px;
+            padding: 25px;
+            width: 85%;
+            max-width: 400px;
+            text-align: center;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            border: 10px solid var(--primary);
+            position: relative;
+            z-index: 10;
+        }
+
+        .header-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .question-box {
+            background: #FFF9C4;
+            padding: 40px 20px;
+            border-radius: 25px;
+            font-size: 4rem;
+            margin-bottom: 25px;
+            color: #FF6F61;
+            border: 4px dashed var(--primary);
+            animation: bounce 2s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-5px); }
+        }
+
+        .options-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .option-btn {
+            background: #F1F8E9;
+            border: 3px solid var(--secondary);
+            padding: 18px;
+            border-radius: 20px;
+            font-size: 1.8rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            color: var(--text);
+            box-shadow: 0 5px 0 var(--secondary);
+        }
+
+        .option-btn:active {
+            transform: translateY(4px);
+            box-shadow: none;
+        }
+
+        /* Animasi Kertas Warna-warni (Confetti) */
+        .confetti {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #f00;
+            z-index: 100;
+            animation: fall 3s linear forwards;
+        }
+
+        @keyframes fall {
+            to { transform: translateY(100vh) rotate(360deg); opacity: 0; }
+        }
+
+        #feedback-icon {
+            font-size: 3rem;
+            height: 50px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <div class="header-info">
+        <div>⭐ <span id="score">0</span></div>
+        <div style="background:var(--primary); color:white; padding:5px 15px; border-radius:20px;">Lvl <span id="level">1</span></div>
+    </div>
+
+    <div id="question" class="question-box">...</div>
+
+    <div class="options-container">
+        <button class="option-btn" id="btn0" onclick="checkAnswer(0)">A. ?</button>
+        <button class="option-btn" id="btn1" onclick="checkAnswer(1)">B. ?</button>
+        <button class="option-btn" id="btn2" onclick="checkAnswer(2)">C. ?</button>
+    </div>
+
+    <div id="feedback-icon"></div>
+</div>
+
+<script>
+    let score = 0;
+    let level = 1;
+    let questionCount = 0;
+    let correctAnswer = 0;
+
+    // Suara Ceria (Audio Context)
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    
+    function playWinSound() {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(440, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(880, audioCtx.currentTime + 0.2);
+        gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+        
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.3);
+    }
+
+    function createConfetti() {
+        const colors = ['#FF9AA2', '#B5EAD7', '#FFDAC1', '#C7F9CC', '#FFB7B2'];
+        for (let i = 0; i < 50; i++) {
+            const confetti = document.createElement('div');
+            confetti.className = 'confetti';
+            confetti.style.left = Math.random() * 100 + 'vw';
+            confetti.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+            confetti.style.top = '-10px';
+            confetti.style.borderRadius = Math.random() > 0.5 ? '50%' : '0';
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 3000);
+        }
+    }
+
+    function generateQuestion() {
+        let maxNum = 5 + (level * 2); 
+        let a = Math.floor(Math.random() * maxNum) + 1;
+        let b = Math.floor(Math.random() * maxNum) + 1;
+        let isAddition = Math.random() > 0.5;
+
+        if (!isAddition && a < b) [a, b] = [b, a];
+
+        correctAnswer = isAddition ? a + b : a - b;
+        document.getElementById('question').innerText = `${a} ${isAddition ? '+' : '-'} ${b}`;
+        
+        let answers = [correctAnswer];
+        while(answers.length < 3) {
+            let wrong = correctAnswer + (Math.floor(Math.random() * 7) - 3);
+            if(wrong >= 0 && !answers.includes(wrong)) answers.push(wrong);
+        }
+        
+        answers.sort(() => Math.random() - 0.5);
+        const labels = ['A', 'B', 'C'];
+        for(let i=0; i<3; i++) {
+            const btn = document.getElementById(`btn${i}`);
+            btn.innerText = `${labels[i]}. ${answers[i]}`;
+            btn.dataset.value = answers[i];
+            btn.style.backgroundColor = "#F1F8E9";
+            btn.style.borderColor = "#B5EAD7";
+        }
+        document.getElementById('feedback-icon').innerText = "";
+    }
+
+    function checkAnswer(index) {
+        const btn = document.getElementById(`btn${index}`);
+        const selected = parseInt(btn.dataset.value);
+        const iconBox = document.getElementById('feedback-icon');
+
+        if(selected === correctAnswer) {
+            score += 10;
+            questionCount++;
+            iconBox.innerText = "🎉 🎺 Bravo!";
+            btn.style.backgroundColor = "#C7F9CC";
+            playWinSound();
+            createConfetti();
+            
+            if(questionCount % 5 === 0) {
+                level++;
+                iconBox.innerText = "🚀 LEVEL UP!";
+            }
+        } else {
+            iconBox.innerText = "💡 Coba Lagi!";
+            btn.style.backgroundColor = "#FFB7B2";
+        }
+
+        document.getElementById('score').innerText = score;
+        document.getElementById('level').innerText = level;
+
+        setTimeout(generateQuestion, 1500);
+    }
+
+    // Inisialisasi Audio saat layar pertama kali disentuh (syarat browser)
+    document.body.addEventListener('touchstart', () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }, { once: true });
+    document.body.addEventListener('mousedown', () => {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+    }, { once: true });
+
+    generateQuestion();
+</script>
+
+</body>
+</html>
